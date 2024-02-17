@@ -1,0 +1,2 @@
+include src/qedis/py.typed
+include LICENSE

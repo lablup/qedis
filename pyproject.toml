@@ -1,0 +1,72 @@
+[build-system]
+requires = ["setuptools>=45", "setuptools_scm[toml]>=6.2"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools_scm]
+version_scheme = "release-branch-semver"
+
+[tool.towncrier]
+package = "qeids"
+package_dir = "src"
+name = "qedis"
+filename = "CHANGES.md"
+directory = "changes/"
+template = "changes/template.md"
+start_string = "<!-- towncrier release notes start -->\n"
+title_format = "{version} ({project_date})"
+issue_format = "([#{issue}](https://github.com/lablup/qedis/issues/{issue}))"
+underlines = ["-", "", ""]
+
+[[tool.towncrier.type]]
+    directory = "breaking"
+    name = "Breaking Changes"
+    showcontent = true
+
+[[tool.towncrier.type]]
+    directory = "feature"
+    name = "Features"
+    showcontent = true
+
+[[tool.towncrier.type]]
+    directory = "deprecation"
+    name = "Deprecations"
+    showcontent = true
+
+[[tool.towncrier.type]]
+    directory = "fix"
+    name = "Fixes"
+    showcontent = true
+
+[[tool.towncrier.type]]
+    directory = "doc"
+    name = "Documentation Changes"
+    showcontent = true
+
+[[tool.towncrier.type]]
+    directory = "misc"
+    name = "Miscellaneous"
+    showcontent = true
+
+[tool.ruff]
+line-length = 88
+src = ["src"]
+select = [
+    "E",  # pycodestyle errors
+    "W",  # pycodestyle warnings
+    "F",  # pyflakes
+    "I",  # isort
+    # "C",  # flake8-comprehensions
+    # "B",  # flake8-bugbear
+]
+ignore = ["E203","E731","E501"]
+preview = true
+target-version = "py311"
+
+[tool.ruff.isort]
+known-first-party = ["aiotools"]
+known-local-folder = ["src"]
+split-on-trailing-comma = true
+
+[tool.black]
+line-length = 88
+preview = true
