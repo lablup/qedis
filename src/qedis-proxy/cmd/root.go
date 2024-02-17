@@ -5,14 +5,17 @@ import (
 	"os"
 
 	"github.com/spf13/cobra"
+	"qedis/proxy/internal/proxy"
 )
 
 var rootCmd = &cobra.Command{
-	// TODO: add commands
+	Run: proxy.RunProxy,
 }
 
 func init() {
-	// TODO: add command options
+	rootCmd.PersistentFlags().StringP("listenAddr", "l", "127.0.0.1:6379", "The listening address (UDP)")
+	rootCmd.PersistentFlags().StringP("remoteAddr", "r", "127.0.0.1:6379", "The upstream (remote) address (TCP or socket path)")
+	rootCmd.PersistentFlags().StringP("remoteProto", "u", "tcp", "The upstream protocol either tcp or unix")
 }
 
 func Execute() {
