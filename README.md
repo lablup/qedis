@@ -23,10 +23,10 @@ docker run -d -v /tmp:/tmp --name qedis-test redis:7-alpine \
 **Terminal 2:**
 ```sh
 cd src/qedis-proxy
-./proxy -u unix -r /tmp/redis.sock
+./proxy -u unix -r /tmp/redis.sock  # proxy the local UDP 6379 port to the Redis
 ```
 
 **Terminal 3:**
 ```sh
-python examples/proof-of-concept.py
+python examples/proof-of-concept.py -k  # use insecure option to allow self-signed cert
 ```
