@@ -32,18 +32,18 @@ class RedisClientProtocol(QuicConnectionProtocol):
     async def query(
         self, command: tuple[str | int | float | bytes | memoryview, ...]
     ) -> Any:
-        data = hiredis.pack_command(command)  # type: ignore
         stream_id = self._quic.get_next_available_stream_id()
-        self._quic.send_stream_data(stream_id, data)
-        logger.info("Client request (stream_id=%d): %r", stream_id, command)
         waiter = Waiter(
             future=self._loop.create_future(),
             parser=hiredis.Reader(notEnoughData=Ellipsis),
         )
         self._waiters[stream_id] = waiter
+        data = hiredis.pack_command(command)  # type: ignore
+        self._quic.send_stream_data(stream_id, data)
+        logger.info("request (stream_id=%d): %r", stream_id, command)
         self.transmit()
         reply = await waiter.future
-        logger.info("Server reply (stream_id=%d): %r", stream_id, reply)
+        logger.info("reply (stream_id=%d): %r", stream_id, reply)
         return reply
 
     async def pipeline(
@@ -52,17 +52,17 @@ class RedisClientProtocol(QuicConnectionProtocol):
         stream_id = self._quic.get_next_available_stream_id()
         replies = []
         for command in commands:
-            data = hiredis.pack_command(command)  # type: ignore
-            self._quic.send_stream_data(stream_id, data)
-            logger.info("Client request (stream_id=%d): %r", stream_id, command)
             waiter = Waiter(
                 future=self._loop.create_future(),
                 parser=hiredis.Reader(notEnoughData=Ellipsis),
             )
             self._waiters[stream_id] = waiter
+            data = hiredis.pack_command(command)  # type: ignore
+            self._quic.send_stream_data(stream_id, data)
+            logger.info("request (stream_id=%d): %r", stream_id, command)
             self.transmit()
             reply = await waiter.future
-            logger.info("Server reply (stream_id=%d): %r", stream_id, reply)
+            logger.info("reply (stream_id=%d): %r", stream_id, reply)
             replies.append(reply)
         return replies
 
@@ -72,11 +72,12 @@ class RedisClientProtocol(QuicConnectionProtocol):
                 waiter = self._waiters.pop(event.stream_id, None)
                 if waiter is None:
                     return
+                logger.debug("Protocol: stream-reset (stream_id=%d)", event.stream_id)
                 if not waiter.future.done():
                     waiter.future.cancel()  # or inject a "connection reset" error
             case StreamDataReceived():
                 waiter = self._waiters.get(event.stream_id, None)
-                logger.debug("Protocol data-recv: %r", event)
+                logger.debug("Protocol: data-recv: %r", event)
                 if waiter is None:
                     logger.debug(
                         "Protocol data-recv (stream_id=%d): waiter missing?",
@@ -88,11 +89,11 @@ class RedisClientProtocol(QuicConnectionProtocol):
                 if msg is Ellipsis:
                     # wait for more data
                     logger.debug(
-                        "Protocol data-recv (stream_id=%d): waiting for more data",
+                        "Protocol: data-recv (stream_id=%d): waiting for more data",
                         event.stream_id,
                     )
                     return
-                logger.debug("Protocol parsed-msg: %r", msg)
+                logger.debug("Protocol: parsed-msg: %r", msg)
                 waiter.future.set_result(msg)
 
 

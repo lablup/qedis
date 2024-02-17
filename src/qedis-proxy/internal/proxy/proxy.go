@@ -43,6 +43,11 @@ func RunProxy(cmd *cobra.Command, args []string) {
 			for {
 				quicStream, err := quicSession.AcceptStream(ctx)
 				if err != nil {
+					if appError, ok := err.(*quic.ApplicationError); ok {
+						if appError.ErrorCode == 0 {
+							return
+						}
+					}
 					log.Println("Error accepting QUIC stream:", err)
 					return
 				}
