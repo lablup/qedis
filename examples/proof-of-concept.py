@@ -3,7 +3,7 @@ import asyncio
 import logging
 import ssl
 from dataclasses import dataclass
-from typing import cast
+from typing import Any, cast
 
 import hiredis
 from aioquic.asyncio.client import connect
@@ -31,7 +31,7 @@ class RedisClientProtocol(QuicConnectionProtocol):
 
     async def query(
         self, command: tuple[str | int | float | bytes | memoryview, ...]
-    ) -> None:
+    ) -> Any:
         data = hiredis.pack_command(command)  # type: ignore
         stream_id = self._quic.get_next_available_stream_id()
         self._quic.send_stream_data(stream_id, data)
@@ -45,6 +45,26 @@ class RedisClientProtocol(QuicConnectionProtocol):
         reply = await waiter.future
         logger.info("Server reply (stream_id=%d): %r", stream_id, reply)
         return reply
+
+    async def pipeline(
+        self, commands: list[tuple[str | int | float | bytes | memoryview, ...]]
+    ) -> list[Any]:
+        stream_id = self._quic.get_next_available_stream_id()
+        replies = []
+        for command in commands:
+            data = hiredis.pack_command(command)  # type: ignore
+            self._quic.send_stream_data(stream_id, data)
+            logger.info("Client request (stream_id=%d): %r", stream_id, command)
+            waiter = Waiter(
+                future=self._loop.create_future(),
+                parser=hiredis.Reader(notEnoughData=Ellipsis),
+            )
+            self._waiters[stream_id] = waiter
+            self.transmit()
+            reply = await waiter.future
+            logger.info("Server reply (stream_id=%d): %r", stream_id, reply)
+            replies.append(reply)
+        return replies
 
     def quic_event_received(self, event: QuicEvent) -> None:
         match event:
@@ -73,7 +93,6 @@ class RedisClientProtocol(QuicConnectionProtocol):
                     )
                     return
                 logger.debug("Protocol parsed-msg: %r", msg)
-                self._quic.stop_stream(event.stream_id, 0)
                 waiter.future.set_result(msg)
 
 
@@ -90,10 +109,7 @@ async def main(
         create_protocol=RedisClientProtocol,
     ) as client:
         client = cast(RedisClientProtocol, client)
-        await client.query(("PING", "hello-world"))
-        await client.query(("PING", "hello-world"))
-        await client.query(("PING", "hello-world"))
-        await client.query(("PING", "hello-world"))
+        await client.query(("PING", "hello world"))
         async with asyncio.TaskGroup() as tg:
             tg.create_task(client.query(("SET", "key", "value")))
             tg.create_task(client.query(("HSET", "data", "a", 123, "b", 456)))
@@ -101,6 +117,30 @@ async def main(
         async with asyncio.TaskGroup() as tg:
             tg.create_task(client.query(("GET", "key")))
             tg.create_task(client.query(("HGETALL", "data")))
+        # Explicitly set the protocol version to 2.
+        await client.pipeline([
+            ("HELLO", 2),
+            ("PING", "hello world, again"),
+            ("PING", "foo"),
+            ("PING", "bar"),
+            ("SET", "k1", "한글"),
+            ("GET", "k1"),
+            ("DEL", "k1"),
+            ("GET", "k1"),
+            ("HGETALL", "data"),  # The reply is a flattend key-value pair list.
+        ])
+        # Explicitly set the protocol version to 3.
+        await client.pipeline([
+            ("HELLO", 3),
+            ("PING", "hello world, again"),
+            ("PING", "foo"),
+            ("PING", "bar"),
+            ("SET", "k1", "한글"),
+            ("GET", "k1"),
+            ("DEL", "k1"),
+            ("GET", "k1"),
+            ("HGETALL", "data"),  # The reply is a proper Python dict.
+        ])
 
 
 if __name__ == "__main__":
