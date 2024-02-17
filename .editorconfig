@@ -1,0 +1,21 @@
+root = true
+
+[*]
+end_of_line = lf
+insert_final_newline = true
+
+[*.go]
+max_line_length = 88
+indent_style = tab
+indent_size = 4
+
+[*.py]
+max_line_length = 88
+
+[*.{py,rst,md}]
+indent_style = space
+indent_size = 4
+
+[.travis.yml]
+indent_style = space
+indent_size = 2
