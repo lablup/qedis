@@ -27,9 +27,12 @@ jobs:
         cache: "pip"
         cache-dependency-path: |
           setup.cfg
-    - name: Install dependencies
+    - name: Prepare environment
       run: |
         docker pull redis:7-alpine
+        echo "VIRTUAL_ENV=${Python_ROOT_DIR}" >> $GITHUB_ENV  # for uv to use the global interpreter
+    - name: Install dependencies
+      run: |
         python -m pip install -U pip setuptools uv
         python -m uv pip install -U -e '.[test]'
     - name: Build the proxy
@@ -72,6 +75,9 @@ jobs:
         cache: "pip"
         cache-dependency-path: |
           setup.cfg
+    - name: Prepare environment
+      run: |
+        echo "VIRTUAL_ENV=${Python_ROOT_DIR}" >> $GITHUB_ENV  # for uv to use the global interpreter
     - name: Install dependencies
       run: |
         python -m pip install -U pip setuptools uv
