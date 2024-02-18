@@ -4,9 +4,9 @@ Redis over QUIC with improved connection management
 
 ## Rationale
 
-Curently, the official Redis client for PYthon, `redis-py` has many issues (ref: redis/redis-py#3008) regarding connection, retry, and timeout management.
+Curently, the official Redis client for Python, `redis-py` has many issues (ref: redis/redis-py#3008) regarding connection, retry, and timeout management.
 Most problems are highlghy coupled to the API design, and it is hard to fix them without breaking the backward compatibility.
-When it comes to HA configurations using sentinels, it is very difficult to distinguish the different stages of the connection setup process.
+When it comes to HA configurations using sentinels on top of asyncio, `redis-py` exhibits many buggy behavior which makes it very difficult to distinguish the different stages of the connection setup process.
 
 The target of this project is to:
 
