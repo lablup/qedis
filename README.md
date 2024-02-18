@@ -6,16 +6,25 @@ Redis over QUIC with improved connection management
 
 Curently, the official Redis client for Python, `redis-py` has many issues (ref: redis/redis-py#3008) regarding connection, retry, and timeout management.
 Most problems are highlghy coupled to the API design, and it is hard to fix them without breaking the backward compatibility.
-When it comes to HA configurations using sentinels on top of asyncio, `redis-py` exhibits many buggy behavior which makes it very difficult to distinguish the different stages of the connection setup process.
+When it comes to HA configurations using Sentinels on top of `asyncio`, `redis-py` exhibits many buggy behaviors making it very difficult to distinguish the source of errors among multiple different stages of the connection setup process.
 
 The target of this project is to:
 
 * Offload the connection pool management to QUIC by adopting light-weight streams bound to local UNIX socket connections of the Redis server.
-  - Make Redis client connections volatile, transient, light-weight QUIC streams.
-  - Split the fault isolation domain of networking into the localhost of Redis server and the QUIC remote networking, instead of coupling them together as in the conventional TCP-based connection pooling.
+  - Let's transform Redis client connections to volatile, transient, and light-weight QUIC streams.
+  - This splits the fault isolation domain of networking:
+    1) the localhost of Redis server
+    2) the QUIC remote networking to deal with intermittent packet loss and network instability
 * Achieve potentially higher performance by eliminating handshake overheads when using secure TLS connections via public networks.
 * Provide a working, ready-to-try client implementation for potential future QUIC adoption in the Redis project ([redis/redis#6301](https://github.com/redis/redis/issues/6301)).
-* Suit the HA requirements when using Redis Sentinel in many of Lablup's customer sites
+* Suit the HA requirements when using Redis Sentinel in many of Lablup's customer sites.
+  - Keep the event streams alive when a sentinel master failover happens, following [the full Sentinel clients specification](https://redis.io/docs/reference/sentinel-clients/).
+  - Provide explicit logging and configurations for retries and give-up conditions.
+  - Distinguish the errors during connection setup (e.g., `CLIENT INFO ...`) and the user-requested command failures.
+* Make the codebase simple and clean by dropping considerations for non-async support and legacy Redis versions
+  - Python 3.11+ (pattern matching, `asyncio.TaskGroup`, etc.)
+  - Redis 6+ (though this library will minimize the command request/reply abstraction, removing high dependency to Redis versions)
+    - Use RESP3 as the default protocol
 
 
 ## Development
