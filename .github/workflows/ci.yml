@@ -30,8 +30,8 @@ jobs:
     - name: Install dependencies
       run: |
         docker pull redis:7-alpine
-        python -m pip install -U pip setuptools
-        python -m pip install -U -e '.[test]'
+        python -m pip install -U pip setuptools uv
+        python -m uv pip install -U -e '.[test]'
     - name: Build the proxy
       run: |
         cd src/qedis-proxy
@@ -74,8 +74,8 @@ jobs:
           setup.cfg
     - name: Install dependencies
       run: |
-        python -m pip install -U pip setuptools
-        pip install -U -e '.[build]'
+        python -m pip install -U pip setuptools uv
+        python -m uv pip install -U -e '.[build]'
     - name: Build sdist and wheel
       run: |
         python -m build -s -w
