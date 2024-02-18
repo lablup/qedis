@@ -14,7 +14,12 @@ jobs:
         - "3.11"
         - "3.12"
     steps:
-    - uses: actions/checkout@v4
+    - name: Checkout the source
+      uses: actions/checkout@v4
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: "^1.20.0"
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
@@ -24,8 +29,13 @@ jobs:
           setup.cfg
     - name: Install dependencies
       run: |
+        docker pull redis:7-alpine
         python -m pip install -U pip setuptools
         python -m pip install -U -e '.[test]'
+    - name: Build the proxy
+      run: |
+        cd src/qedis-proxy
+        go build
     - name: Test with pytest
       timeout-minutes: 30
       run: |
