@@ -15,6 +15,7 @@ The target of this project is to:
   - Split the fault isolation domain of networking into the localhost of Redis server and the QUIC remote networking, instead of coupling them together as in the conventional TCP-based connection pooling.
 * Achieve potentially higher performance by eliminating handshake overheads when using secure TLS connections via public networks.
 * Provide a working, ready-to-try client implementation for potential future QUIC adoption in the Redis project ([redis/redis#6301](https://github.com/redis/redis/issues/6301)).
+* Suit the HA requirements when using Redis Sentinel in many of Lablup's customer sites
 
 
 ## Development
