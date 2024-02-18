@@ -13,7 +13,7 @@ The target of this project is to:
 * Offload the connection pool management to QUIC by adopting light-weight streams bound to local UNIX socket connections of the Redis server.
   - Make Redis client connections volatile, transient, light-weight QUIC streams.
   - Split the fault isolation domain of networking into the localhost of Redis server and the QUIC remote networking, instead of coupling them together as in the conventional TCP-based connection pooling.
-* Achieve potentiall higher performance by eliminating handshake overheads when using secure TLS connections via public networks.
+* Achieve potentially higher performance by eliminating handshake overheads when using secure TLS connections via public networks.
 * Provide a working, ready-to-try client implementation for potential future QUIC adoption in the Redis project ([redis/redis#6301](https://github.com/redis/redis/issues/6301)).
 
 
